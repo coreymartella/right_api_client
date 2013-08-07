@@ -200,7 +200,7 @@ module RightApi
       data = if resource_type == 'text'
         { 'text' => body }
       else
-        JSON.parse(body)
+        JSON.parse(body.gsub("NaN","0"))
       end
 
       [resource_type, path, data]
