@@ -111,46 +111,6 @@ module RightApi
 
       Resources.new(self, path, type)
     end
-
-    protected
-
-    def login
-      params, path = if @instance_token
-        [ { 'instance_token' => @instance_token },
-          ROOT_INSTANCE_RESOURCE ]
-      elsif @password_base64
-        [ { 'email' => @email, 'password' => Base64.decode64(@password_base64) },
-          ROOT_RESOURCE ]
-      else
-        [ { 'email' => @email, 'password' => @password },
-          ROOT_RESOURCE ]
-      end
-      params['account_href'] = "/api/accounts/#{@account_id}"
-
-      response = @rest_client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
-        if response.code == 302
-          update_api_url(response)
-          response.follow_redirection(request, result, &block)
-        else
-          response.return!(request, result)
-        end
-      end
-
-      update_cookies(response)
-    end
-
-    # Returns the request headers
-    def headers
-      {'X_API_VERSION' => @api_version, :cookies => @cookies, :accept => :json}
-    end
-
-    def update_last_request(request, response)
-      @last_request[:request]  = request
-      @last_request[:response] = response
-    end
-
-    # Generic get
-    # params are NOT read only
     def do_get(path, params={})
 
       # Resource id is a special param as it needs to be added to the path
@@ -330,6 +290,46 @@ module RightApi
         raise wrap(e, :put, path, params, req, res)
       end
     end
+
+    protected
+
+    def login
+      params, path = if @instance_token
+        [ { 'instance_token' => @instance_token },
+          ROOT_INSTANCE_RESOURCE ]
+      elsif @password_base64
+        [ { 'email' => @email, 'password' => Base64.decode64(@password_base64) },
+          ROOT_RESOURCE ]
+      else
+        [ { 'email' => @email, 'password' => @password },
+          ROOT_RESOURCE ]
+      end
+      params['account_href'] = "/api/accounts/#{@account_id}"
+
+      response = @rest_client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
+        if response.code == 302
+          update_api_url(response)
+          response.follow_redirection(request, result, &block)
+        else
+          response.return!(request, result)
+        end
+      end
+
+      update_cookies(response)
+    end
+
+    # Returns the request headers
+    def headers
+      {'X_API_VERSION' => @api_version, :cookies => @cookies, :accept => :json}
+    end
+
+    def update_last_request(request, response)
+      @last_request[:request]  = request
+      @last_request[:response] = response
+    end
+
+    # Generic get
+    # params are NOT read only
 
     def re_login?(e)
       e.message.index('403') && e.message =~ %r(.*Session cookie is expired or invalid)
